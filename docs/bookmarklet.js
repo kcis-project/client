@@ -10,7 +10,7 @@
  * 절대 LinkedIn 의 응답을 서버로 보내지 않는다 — 전 과정 클라이언트 사이드.
  */
 (function () {
-  var TARGET = 'https://kcis-project.github.io/'; // 등록 페이지 URL
+  var TARGET = 'https://kcis-project.github.io/client/'; // 등록 페이지 URL
   function t(el) { return (el && (el.innerText || el.textContent) || '').trim(); }
   function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
 

@@ -183,11 +183,12 @@
 
 <script>
 // ── 설정 ────────────────────────────────────────────────────────
-// 같은 호스트(github.io)에서 운영 서버를 호출. 로컬 개발은 localhost.
+// 운영 API 는 nip.io 호스트네임 + Let's Encrypt 인증서로 HTTPS 제공.
+// GitHub Pages 가 HTTPS 라서 Mixed Content 회피용으로 도메인 + TLS 가 필수.
 const API_BASE = (() => {
   const h = location.hostname;
   if (h === 'localhost' || h === '127.0.0.1' || h === '') return 'http://localhost:3000';
-  return 'http://168.110.112.119';
+  return 'https://144-24-79-213.nip.io';
 })();
 
 const JOB_TAGS = [
