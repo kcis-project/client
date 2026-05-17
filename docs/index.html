@@ -44,9 +44,9 @@
     .card-edit-btn{position:absolute;top:14px;right:14px;font-size:.73rem;color:#888;background:none;border:1px solid #e0e0e0;border-radius:6px;padding:2px 8px;cursor:pointer}
     .card-edit-btn:hover{background:#111;color:#fff;border-color:#111}
 
-    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-start;justify-content:center;z-index:1000;overflow-y:auto;padding:40px 16px}
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:1000;overflow:hidden;padding:16px}
     .overlay.open{display:flex}
-    .modal-box{background:#fff;border-radius:14px;width:100%;max-width:640px;padding:28px;position:relative;box-shadow:0 8px 40px rgba(0,0,0,.25)}
+    .modal-box{background:#fff;border-radius:14px;width:100%;max-width:640px;padding:28px;position:relative;box-shadow:0 8px 40px rgba(0,0,0,.25);max-height:calc(100vh - 32px);overflow-y:auto}
     .modal-close{position:absolute;top:14px;right:14px;background:none;border:none;font-size:1.3rem;cursor:pointer;color:#888}
     .modal-box h2{font-size:1.15rem;margin-bottom:18px;font-weight:800}
 
@@ -99,7 +99,7 @@
     .filter-bar{padding:10px 28px;display:flex;gap:8px;flex-wrap:wrap;background:#fff;border-bottom:1px solid #ebebeb;align-items:center}
     .filter-drop{position:relative}
     .filter-drop .fbtn::after{content:' ▾';font-size:.65rem}
-    .filter-drop-list{position:absolute;top:calc(100% + 4px);left:0;min-width:160px;max-height:240px;overflow-y:auto;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.1);display:none;z-index:200}
+    .filter-drop-list{position:absolute;top:calc(100% + 4px);left:0;min-width:160px;max-height:min(320px, 60vh);overflow-y:auto;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.1);display:none;z-index:200;overscroll-behavior:contain}
     .filter-drop-list.open{display:block}
     .filter-drop-item{padding:7px 12px;font-size:.8rem;cursor:pointer;color:#444}
     .filter-drop-item:hover,.filter-drop-item.active{background:#f3f3f3;color:#111;font-weight:600}
@@ -165,7 +165,7 @@
     <div class="filter-drop-list" id="fdl-dept"></div>
   </div>
   <div class="filter-drop" id="fd-year">
-    <button class="fbtn" id="fb-year">연도</button>
+    <button class="fbtn" id="fb-year">학번</button>
     <div class="filter-drop-list" id="fdl-year"></div>
   </div>
   <div class="filter-drop" id="fd-job">
@@ -206,7 +206,7 @@
       <input id="f-dept" type="text" placeholder="컴퓨터학부" autocomplete="off">
     </div>
     <div class="form-field">
-      <label>졸업/입학 연도</label>
+      <label>학번</label>
       <input id="f-year" type="text" placeholder="19">
     </div>
   </div>
@@ -548,7 +548,7 @@ function buildFilters() {
         FILTER_STATE[key] = el.dataset.val;
         listEl.classList.remove('open');
         const btn = listEl.parentElement.querySelector('.fbtn');
-        btn.textContent = el.dataset.val || (key === 'dept' ? '학과' : key === 'year' ? '연도' : '업종');
+        btn.textContent = el.dataset.val || (key === 'dept' ? '학과' : key === 'year' ? '학번' : '업종');
         btn.classList.toggle('active', !!el.dataset.val);
         applyFilter();
       });
@@ -569,7 +569,7 @@ function setupFilterEvents() {
     document.getElementById('f-current-toggle').classList.remove('active');
     document.getElementById('fb-dept').textContent = '학과';
     document.getElementById('fb-dept').classList.remove('active');
-    document.getElementById('fb-year').textContent = '연도';
+    document.getElementById('fb-year').textContent = '학번';
     document.getElementById('fb-year').classList.remove('active');
     document.getElementById('fb-job').textContent = '업종';
     document.getElementById('fb-job').classList.remove('active');
