@@ -26,8 +26,19 @@
     .avatar{width:40px;height:40px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#333,#777);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:1rem}
     .cname{font-size:.97rem;font-weight:700}
     .dept{font-size:.75rem;color:#999;margin-top:1px}
-    .cur-badge{display:inline-block;font-size:.78rem;color:#111;font-weight:600;background:#f0f0f0;padding:3px 9px;border-radius:7px;margin-bottom:8px}
+    .cur-badge{display:inline-flex;align-items:center;gap:5px;font-size:.78rem;color:#111;font-weight:600;background:#f0f0f0;padding:3px 9px;border-radius:7px;margin-bottom:8px}
     .cur-badge.active{background:#111;color:#fff}
+    .co-logo{width:14px;height:14px;object-fit:contain;border-radius:2px;flex-shrink:0}
+    .co-logo-lg{width:18px;height:18px}
+    .exp-co{display:inline-flex;align-items:center;gap:3px;cursor:default;position:relative}
+    .exp-co[data-domain]{cursor:pointer;border-bottom:1px dashed #ccc}
+    .exp-co[data-domain]:hover{color:#111}
+    .co-preview{position:absolute;bottom:calc(100% + 8px);left:0;background:#fff;border:1px solid #e0e0e0;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.14);padding:12px 14px;min-width:220px;z-index:500;display:none;pointer-events:none}
+    .co-preview.show{display:block}
+    .co-preview-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+    .co-preview-logo{width:28px;height:28px;object-fit:contain;border-radius:6px;border:1px solid #eee}
+    .co-preview-name{font-weight:700;font-size:.88rem}
+    .co-preview-meta{font-size:.73rem;color:#888;line-height:1.5}
     .sec-title{font-size:.72rem;color:#999;text-transform:uppercase;margin-top:10px;margin-bottom:4px;font-weight:600;letter-spacing:.04em}
     .exp-line,.edu-line,.cert-line,.act-line{font-size:.8rem;color:#444;margin:2px 0;line-height:1.4}
     .card-edit-btn{position:absolute;top:14px;right:14px;font-size:.73rem;color:#888;background:none;border:1px solid #e0e0e0;border-radius:6px;padding:2px 8px;cursor:pointer}
@@ -273,6 +284,103 @@ let ALL_MEMBERS = [];
 let DEPARTMENTS = [];
 let editingId = null;  // null 이면 신규, hex string 이면 수정
 
+// ── 기업 로고/도메인 매핑 ─────────────────────────────────────
+const CO_DOMAIN = {
+  '삼성전자':'samsung.com','삼성SDS':'samsungsds.com','삼성SDI':'samsungsdi.com',
+  '삼성바이오로직스':'samsungbiologics.com','삼성증권':'samsungpop.com',
+  '삼성생명':'samsunglife.com','삼성화재':'samsungfire.com',
+  'LG전자':'lg.com','LG이노텍':'lginnotek.com','LG에너지솔루션':'lgensol.com',
+  'LG CNS':'lgcns.com','LG화학':'lgchem.com',
+  '현대자동차':'hyundai.com','현대모비스':'mobis.co.kr','현대건설':'hdec.kr',
+  '현대해상':'hi.co.kr','현대캐피탈':'hyundaicapital.com',
+  '기아':'kia.com','SK하이닉스':'skhynix.com','SK텔레콤':'skt.co.kr',
+  'SK이노베이션':'skinnovation.com','포스코':'posco.com',
+  'KT':'kt.com','한화':'hanwha.com','롯데':'lotte.com','두산':'doosan.com',
+  '셀트리온':'celltrion.com','CJ ENM':'cjenm.com',
+  '신한은행':'shinhan.com','신한투자증권':'shinhaninvest.com','신한카드':'shinhancard.com',
+  'KB국민은행':'kbstar.com','KB증권':'kbsec.com','KB자산운용':'kbam.co.kr',
+  '하나은행':'hanabank.com','하나증권':'hanasec.co.kr',
+  '우리은행':'wooribank.com','NH농협은행':'nonghyup.com','NH투자증권':'nhqv.com',
+  'NH농협캐피탈':'nhcapital.co.kr','IBK기업은행':'ibk.co.kr',
+  '한국산업은행':'kdb.co.kr','한국수출입은행':'koreaexim.go.kr',
+  '대구은행':'dgb.co.kr','iM뱅크':'dgb.co.kr','케이뱅크':'kbanknow.com',
+  '카카오뱅크':'kakaobank.com','토스뱅크':'tossbank.com',
+  '한국투자증권':'truefriend.com','미래에셋증권':'miraeasset.com',
+  '미래에셋자산운용':'miraeasset.com','삼성자산운용':'samsungfund.com',
+  '키움증권':'kiwoom.com','대신증권':'daishin.com','LS증권':'lssec.co.kr',
+  '한국토지주택공사':'lh.or.kr','한국전력공사':'kepco.co.kr',
+  '한국수자원공사':'kwater.or.kr','한국도로공사':'ex.co.kr',
+  '국민연금공단':'nps.or.kr','한국자산관리공사':'kamco.or.kr',
+  '예금보험공사':'kdic.or.kr','신용보증기금':'kodit.or.kr',
+  '한국가스공사':'kogas.or.kr','코레일':'korail.com',
+  '인천국제공항공사':'airport.kr','주택금융공사':'hf.go.kr',
+  '카카오':'kakao.com','카카오페이':'kakaopay.com',
+  '네이버':'naver.com','네이버클라우드':'ncloud.com',
+  '쿠팡':'coupang.com','배달의민족':'baemin.com','우아한형제들':'baemin.com',
+  '당근':'daangn.com','당근마켓':'daangn.com',
+  '토스':'toss.im','비바리퍼블리카':'toss.im',
+  '야놀자':'yanolja.com','직방':'zigbang.com','뱅크샐러드':'banksalad.com',
+  '리디':'ridi.com','무신사':'musinsa.com','오늘의집':'ohou.se',
+  '넥슨':'nexon.com','엔씨소프트':'ncsoft.com','크래프톤':'krafton.com','넷마블':'netmarble.com',
+  '하이브':'hybe.co.kr','쏘카':'socar.kr',
+  '제일기획':'cheil.com','이노션':'innocean.com','대홍기획':'daehong.com',
+  '11번가':'11st.co.kr','에이블리':'a-bly.com','채널톡':'channel.io',
+  'Google':'google.com','구글':'google.com','Microsoft':'microsoft.com','마이크로소프트':'microsoft.com',
+  'Apple':'apple.com','애플':'apple.com','Amazon':'amazon.com','아마존':'amazon.com',
+  'Meta':'meta.com','메타':'meta.com','Netflix':'netflix.com',
+  'NVIDIA':'nvidia.com','Intel':'intel.com','AMD':'amd.com','Tesla':'tesla.com',
+  'Salesforce':'salesforce.com','Oracle':'oracle.com','IBM':'ibm.com',
+  'SAP':'sap.com','Cisco':'cisco.com','Adobe':'adobe.com',
+  'Uber':'uber.com','Airbnb':'airbnb.com','Spotify':'spotify.com',
+  'PayPal':'paypal.com','Stripe':'stripe.com','Shopify':'shopify.com',
+  'OpenAI':'openai.com','Anthropic':'anthropic.com','ByteDance':'bytedance.com',
+  'Goldman Sachs':'goldmansachs.com','JP Morgan':'jpmorgan.com','Morgan Stanley':'morganstanley.com',
+  'Citi':'citi.com','HSBC':'hsbc.com','UBS':'ubs.com','Deutsche Bank':'db.com',
+  'Barclays':'barclays.com','BlackRock':'blackrock.com','KKR':'kkr.com',
+  'McKinsey':'mckinsey.com','BCG':'bcg.com','Bain':'bain.com',
+  'Deloitte':'deloitte.com','EY':'ey.com','PwC':'pwc.com','KPMG':'kpmg.com','Accenture':'accenture.com',
+};
+const GROUP_KW = [
+  ['삼성','samsung.com'],['LG','lg.com'],['현대','hyundai.com'],['SK','sk.com'],
+  ['롯데','lotte.com'],['CJ','cj.net'],['한화','hanwha.com'],['두산','doosan.com'],
+  ['포스코','posco.com'],['카카오','kakao.com'],['네이버','naver.com'],
+  ['신한','shinhan.com'],['KB','kbstar.com'],['하나','hanabank.com'],
+  ['농협','nonghyup.com'],['미래에셋','miraeasset.com'],['GS','gs.co.kr'],
+];
+let COMPANIES_CACHE = {};
+
+function getLogoDomain(name) {
+  if (!name) return '';
+  const clean = name.replace(/\s*(주식회사|유한회사|\(주\)|\(유\)|㈜|㈔)\s*/g,'').trim();
+  if (CO_DOMAIN[clean]) return CO_DOMAIN[clean];
+  for (const [kw, domain] of GROUP_KW) {
+    if (clean.includes(kw)) return domain;
+  }
+  return '';
+}
+
+function logoImg(name, cls) {
+  const d = getLogoDomain(name);
+  return d ? `<img class="co-logo ${cls||''}" src="https://www.google.com/s2/favicons?domain=${d}&sz=64" alt="" onerror="this.style.display='none'">` : '';
+}
+
+async function loadCompaniesCache() {
+  try {
+    const list = await api('/api/companies');
+    list.forEach(c => { COMPANIES_CACHE[c.name.toLowerCase()] = c; });
+  } catch(e) {}
+}
+
+function findCompanyInfo(name) {
+  if (!name) return null;
+  const n = name.toLowerCase().replace(/\s*(주식회사|유한회사|\(주\)|\(유\)|㈜|㈔)\s*/g,'').trim();
+  if (COMPANIES_CACHE[n]) return COMPANIES_CACHE[n];
+  for (const key in COMPANIES_CACHE) {
+    if (n.includes(key) || key.includes(n)) return COMPANIES_CACHE[key];
+  }
+  return null;
+}
+
 // ── HTTP 헬퍼 ──────────────────────────────────────────────────
 async function api(path, opts = {}) {
   const r = await fetch(API_BASE + path, {
@@ -287,12 +395,27 @@ async function api(path, opts = {}) {
 // ── 카드 렌더 ──────────────────────────────────────────────────
 function av(n) { return (n || '?')[0]; }
 
+function renderExpCompany(name) {
+  const domain = getLogoDomain(name);
+  const logo = logoImg(name);
+  const info = findCompanyInfo(name);
+  const dataAttr = domain ? ` data-domain="${domain}"` : '';
+  const dataInfo = info ? ` data-co="${escapeHtml(JSON.stringify({name:info.name,industry:info.industry||'',established:info.established||''}))}"`  : '';
+  return `<span class="exp-co"${dataAttr}${dataInfo}>${logo}${escapeHtml(name)}</span>`;
+}
+
 function renderCard(m) {
-  const exps = (m.experiences || []).map(e => `<div class="exp-line">· ${escapeHtml([e.company, e.role, e.period].filter(Boolean).join(' / '))}${e.is_current ? '<span class="exp-current-badge">현재</span>' : ''}</div>`).join('');
+  const exps = (m.experiences || []).map(e => {
+    const co = e.company ? renderExpCompany(e.company) : '';
+    const rest = [e.role, e.period].filter(Boolean).join(' / ');
+    const cur = e.is_current ? '<span class="exp-current-badge">현재</span>' : '';
+    return `<div class="exp-line">· ${co}${rest ? ' / ' + escapeHtml(rest) : ''}${cur}</div>`;
+  }).join('');
   const edu  = (m.education   || []).map(e => `<div class="edu-line">· ${escapeHtml([e.school, e.major, e.period].filter(Boolean).join(' / '))}</div>`).join('');
   const acts = (m.etc         || []).map(a => { const t = typeof a === 'string' ? a : [a.name, a.role, a.period].filter(Boolean).join(' / '); return t ? `<div class="act-line">· ${escapeHtml(t)}</div>` : ''; }).join('');
   const cert = (m.certs       || []).map(c => `<div class="cert-line">· ${escapeHtml([c.name, c.issuer, c.date].filter(Boolean).join(' / '))}</div>`).join('');
   const badgeClass = m.is_current ? 'cur-badge active' : 'cur-badge';
+  const curLogo = logoImg(m.current_company);
 
   return `<div class="card">
     <button class="card-edit-btn" data-edit="${m.id}">✏ 수정</button>
@@ -301,7 +424,7 @@ function renderCard(m) {
       <div><div class="cname">${escapeHtml(m.name || '')}</div>
         <div class="dept">${escapeHtml([m.dept, m.year].filter(Boolean).join(' · '))}</div></div>
     </div>
-    ${m.current_company ? `<div class="${badgeClass}">${escapeHtml(m.current_company)}${m.is_current ? ' · 현직' : ''}</div>` : ''}
+    ${m.current_company ? `<div class="${badgeClass}">${curLogo}${escapeHtml(m.current_company)}${m.is_current ? ' · 현직' : ''}</div>` : ''}
     ${m.job_type ? `<div class="sec-title">업종</div><div class="exp-line">${escapeHtml(m.job_type)}</div>` : ''}
     ${exps  ? `<div class="sec-title">경력</div>${exps}` : ''}
     ${edu   ? `<div class="sec-title">학력</div>${edu}` : ''}
@@ -345,6 +468,24 @@ function render(list) {
 
   grid.querySelectorAll('[data-edit]').forEach(btn => {
     btn.addEventListener('click', (e) => { e.stopPropagation(); openEditModal(btn.dataset.edit); });
+  });
+
+  grid.querySelectorAll('.exp-co[data-co]').forEach(el => {
+    let preview = null;
+    el.addEventListener('mouseenter', () => {
+      try {
+        const info = JSON.parse(el.dataset.co);
+        const domain = el.dataset.domain || '';
+        const logoUrl = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128` : '';
+        preview = document.createElement('div');
+        preview.className = 'co-preview show';
+        preview.innerHTML = `<div class="co-preview-head">${logoUrl ? `<img class="co-preview-logo" src="${logoUrl}" onerror="this.remove()">` : ''}<span class="co-preview-name">${escapeHtml(info.name)}</span></div><div class="co-preview-meta">${[info.industry, info.established ? '설립 ' + info.established : ''].filter(Boolean).join(' · ') || '등록된 기업'}</div>`;
+        el.appendChild(preview);
+      } catch(e) {}
+    });
+    el.addEventListener('mouseleave', () => {
+      if (preview) { preview.remove(); preview = null; }
+    });
   });
 }
 
@@ -895,7 +1036,7 @@ document.getElementById('modal-submit').addEventListener('click', async () => {
 
 // ── 부트 ───────────────────────────────────────────────────────
 (async () => {
-  await Promise.all([loadMembers(), loadDepartments()]);
+  await Promise.all([loadMembers(), loadDepartments(), loadCompaniesCache()]);
   // 폼 행 초기화 (최초 빈 행 1개씩)
   ['exp-rows','edu-rows','act-rows','cert-rows'].forEach(id => addRow(id, {}));
 })();
