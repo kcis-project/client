@@ -543,7 +543,7 @@ function attachCompanyAutocomplete(input) {
     rows.forEach((c, i) => {
       const el = document.createElement('div');
       el.className = 'ac-item';
-      const meta = [c.industry, c.ceo, c.established].filter(Boolean).join(' · ');
+      const meta = [c.industry, c.established].filter(Boolean).join(' · ');
       el.innerHTML = `<div class="ac-name">${escapeHtml(c.name)}</div>${meta ? `<div class="ac-meta">${escapeHtml(meta)}</div>` : ''}`;
       el.addEventListener('mousedown', e => { e.preventDefault(); input.value = c.name; hide(); });
       list.appendChild(el);

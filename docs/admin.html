@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>KCIS 관리</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f5f5f5;color:#111}
+    header{background:#fff;border-bottom:1px solid #e8e8e8;padding:14px 28px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+    header h1{font-size:1.25rem;font-weight:900;color:#111;letter-spacing:-.03em}
+    .back-link{font-size:.82rem;color:#666;text-decoration:none;margin-left:auto;border:1px solid #ddd;padding:5px 14px;border-radius:18px;transition:all .15s}
+    .back-link:hover{background:#111;color:#fff;border-color:#111}
+
+    .tabs{display:flex;gap:8px;padding:16px 28px 0}
+    .tab-btn{padding:8px 20px;border:1.5px solid #ddd;border-radius:20px;background:#fff;font-size:.85rem;font-weight:700;cursor:pointer;color:#555;transition:all .15s}
+    .tab-btn.active,.tab-btn:hover{background:#111;color:#fff;border-color:#111}
+
+    .panel{display:none;padding:20px 28px 48px}
+    .panel.active{display:block}
+
+    .toolbar{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+    .search-input{padding:8px 16px;border:1.5px solid #ddd;border-radius:20px;font-size:.85rem;width:240px;outline:none;font-family:inherit}
+    .search-input:focus{border-color:#111}
+    .count-badge{font-size:.78rem;color:#888}
+    .add-btn{padding:8px 16px;background:#111;color:#fff;border:none;border-radius:20px;font-size:.83rem;font-weight:700;cursor:pointer;transition:background .15s;margin-left:auto}
+    .add-btn:hover{background:#333}
+
+    .inline-form{background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:16px;margin-bottom:16px;display:none;gap:10px;flex-wrap:wrap;align-items:flex-end}
+    .inline-form.open{display:flex}
+    .inline-form .field{display:flex;flex-direction:column;gap:4px}
+    .inline-form label{font-size:.75rem;font-weight:600;color:#666}
+    .inline-form input{padding:7px 10px;border:1px solid #ddd;border-radius:7px;font-size:.84rem;outline:none;font-family:inherit;width:180px}
+    .inline-form input:focus{border-color:#111}
+    .inline-form .submit-btn{padding:8px 18px;background:#111;color:#fff;border:none;border-radius:8px;font-size:.83rem;font-weight:700;cursor:pointer;height:34px}
+    .inline-form .submit-btn:hover{background:#333}
+    .inline-form .submit-btn:disabled{background:#aaa;cursor:not-allowed}
+    .inline-form .cancel-btn{padding:8px 14px;background:#fff;color:#555;border:1px solid #ddd;border-radius:8px;font-size:.83rem;cursor:pointer;height:34px}
+    .inline-form .cancel-btn:hover{border-color:#111;color:#111}
+    .form-msg{font-size:.78rem;width:100%;margin-top:4px;min-height:1em}
+    .form-msg.error{color:#c44}
+    .form-msg.success{color:#2a7}
+
+    table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);border:1px solid #ebebeb}
+    th,td{text-align:left;padding:10px 14px;font-size:.84rem;border-bottom:1px solid #f0f0f0}
+    th{background:#fafafa;font-weight:700;color:#555;font-size:.78rem;text-transform:uppercase;letter-spacing:.03em}
+    tr:last-child td{border-bottom:none}
+    tr:hover td{background:#fafcff}
+    .del-btn{padding:4px 10px;border:1px solid #e0e0e0;border-radius:6px;background:#fff;font-size:.75rem;color:#888;cursor:pointer;transition:all .15s}
+    .del-btn:hover{background:#fee;color:#c44;border-color:#fcc}
+    .empty-msg{text-align:center;padding:40px;color:#999;font-size:.9rem}
+    .loading{text-align:center;padding:40px;color:#aaa;font-size:.85rem}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>KCIS 관리</h1>
+    <a href="index.html" class="back-link">연명부로 돌아가기</a>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="companies">기업 관리</button>
+    <button class="tab-btn" data-tab="departments">학과 관리</button>
+  </div>
+
+  <!-- 기업 관리 -->
+  <div class="panel active" id="panel-companies">
+    <div class="toolbar">
+      <input type="text" class="search-input" id="company-search" placeholder="기업 검색...">
+      <span class="count-badge" id="company-count"></span>
+      <button class="add-btn" id="add-company-btn">+ 기업 추가</button>
+    </div>
+
+    <div class="inline-form" id="company-form">
+      <div class="field">
+        <label>기업명 *</label>
+        <input type="text" id="cf-name" placeholder="기업명">
+      </div>
+      <div class="field">
+        <label>업종</label>
+        <input type="text" id="cf-industry" placeholder="업종 (선택)">
+      </div>
+      <div class="field">
+        <label>설립연도</label>
+        <input type="text" id="cf-established" placeholder="예: 1990">
+      </div>
+      <button class="submit-btn" id="cf-submit">추가</button>
+      <button class="cancel-btn" id="cf-cancel">취소</button>
+      <div class="form-msg" id="cf-msg"></div>
+    </div>
+
+    <div id="company-table-wrap">
+      <div class="loading">불러오는 중...</div>
+    </div>
+  </div>
+
+  <!-- 학과 관리 -->
+  <div class="panel" id="panel-departments">
+    <div class="toolbar">
+      <input type="text" class="search-input" id="dept-search" placeholder="학과 검색...">
+      <span class="count-badge" id="dept-count"></span>
+    </div>
+
+    <div id="dept-table-wrap">
+      <div class="loading">불러오는 중...</div>
+    </div>
+  </div>
+
+<script>
+// ── 설정 ──────────────────────────────────────────────────────────
+const API_BASE = (() => {
+  const h = location.hostname;
+  if (h === 'localhost' || h === '127.0.0.1' || h === '') return 'http://localhost:3000';
+  return 'https://168-107-46-23.nip.io';
+})();
+
+// ── HTTP 헬퍼 ─────────────────────────────────────────────────────
+async function api(path, opts = {}) {
+  const r = await fetch(API_BASE + path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+  });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+// ── 탭 전환 ───────────────────────────────────────────────────────
+const tabBtns = document.querySelectorAll('.tab-btn');
+tabBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    tabBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ── 기업 관리 ─────────────────────────────────────────────────────
+let allCompanies = [];
+
+async function loadCompanies() {
+  try {
+    allCompanies = await api('/api/companies');
+    renderCompanies();
+  } catch (e) {
+    document.getElementById('company-table-wrap').innerHTML =
+      '<div class="empty-msg">기업 목록을 불러올 수 없습니다: ' + e.message + '</div>';
+  }
+}
+
+function renderCompanies() {
+  const q = document.getElementById('company-search').value.trim().toLowerCase();
+  const filtered = q
+    ? allCompanies.filter(c =>
+        (c.name || '').toLowerCase().includes(q) ||
+        (c.industry || '').toLowerCase().includes(q))
+    : allCompanies;
+
+  document.getElementById('company-count').textContent = `총 ${allCompanies.length}개` + (q ? ` (검색: ${filtered.length}개)` : '');
+
+  if (filtered.length === 0) {
+    document.getElementById('company-table-wrap').innerHTML =
+      '<div class="empty-msg">' + (q ? '검색 결과가 없습니다.' : '등록된 기업이 없습니다.') + '</div>';
+    return;
+  }
+
+  let html = '<table><thead><tr><th>기업명</th><th>업종</th><th>설립</th><th></th></tr></thead><tbody>';
+  filtered.forEach(c => {
+    html += `<tr>
+      <td>${esc(c.name)}</td>
+      <td>${esc(c.industry || '-')}</td>
+      <td>${esc(c.established || '-')}</td>
+      <td><button class="del-btn" data-id="${c._id}">삭제</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('company-table-wrap').innerHTML = html;
+
+  document.querySelectorAll('.del-btn').forEach(btn => {
+    btn.addEventListener('click', () => deleteCompany(btn.dataset.id));
+  });
+}
+
+async function deleteCompany(id) {
+  if (!confirm('정말 삭제하시겠습니까?')) return;
+  try {
+    await api('/api/admin/companies/' + id, { method: 'DELETE' });
+    allCompanies = allCompanies.filter(c => c._id !== id);
+    renderCompanies();
+  } catch (e) {
+    alert('삭제 실패: ' + e.message);
+  }
+}
+
+// 검색
+document.getElementById('company-search').addEventListener('input', renderCompanies);
+
+// 추가 폼
+const companyForm = document.getElementById('company-form');
+document.getElementById('add-company-btn').addEventListener('click', () => {
+  companyForm.classList.toggle('open');
+});
+document.getElementById('cf-cancel').addEventListener('click', () => {
+  companyForm.classList.remove('open');
+  clearCompanyForm();
+});
+document.getElementById('cf-submit').addEventListener('click', async () => {
+  const name = document.getElementById('cf-name').value.trim();
+  const industry = document.getElementById('cf-industry').value.trim();
+  const established = document.getElementById('cf-established').value.trim();
+  const msg = document.getElementById('cf-msg');
+
+  if (!name) {
+    msg.textContent = '기업명은 필수입니다.';
+    msg.className = 'form-msg error';
+    return;
+  }
+
+  const btn = document.getElementById('cf-submit');
+  btn.disabled = true;
+  msg.textContent = '';
+
+  try {
+    const body = { name };
+    if (industry) body.industry = industry;
+    if (established) body.established = established;
+
+    const created = await api('/api/admin/companies', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+    allCompanies.push(created);
+    renderCompanies();
+    clearCompanyForm();
+    msg.textContent = '추가 완료!';
+    msg.className = 'form-msg success';
+    setTimeout(() => { msg.textContent = ''; }, 2000);
+  } catch (e) {
+    msg.textContent = '추가 실패: ' + e.message;
+    msg.className = 'form-msg error';
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+function clearCompanyForm() {
+  document.getElementById('cf-name').value = '';
+  document.getElementById('cf-industry').value = '';
+  document.getElementById('cf-established').value = '';
+  document.getElementById('cf-msg').textContent = '';
+}
+
+// ── 학과 관리 ─────────────────────────────────────────────────────
+let allDepartments = [];
+
+async function loadDepartments() {
+  try {
+    allDepartments = await api('/api/departments');
+    renderDepartments();
+  } catch (e) {
+    document.getElementById('dept-table-wrap').innerHTML =
+      '<div class="empty-msg">학과 목록을 불러올 수 없습니다: ' + e.message + '</div>';
+  }
+}
+
+function renderDepartments() {
+  const q = document.getElementById('dept-search').value.trim().toLowerCase();
+  const filtered = q
+    ? allDepartments.filter(d =>
+        (d.name || '').toLowerCase().includes(q) ||
+        (d.college || '').toLowerCase().includes(q))
+    : allDepartments;
+
+  document.getElementById('dept-count').textContent = `총 ${allDepartments.length}개` + (q ? ` (검색: ${filtered.length}개)` : '');
+
+  if (filtered.length === 0) {
+    document.getElementById('dept-table-wrap').innerHTML =
+      '<div class="empty-msg">' + (q ? '검색 결과가 없습니다.' : '등록된 학과가 없습니다.') + '</div>';
+    return;
+  }
+
+  let html = '<table><thead><tr><th>학과명</th><th>단과대학</th></tr></thead><tbody>';
+  filtered.forEach(d => {
+    html += `<tr>
+      <td>${esc(d.name)}</td>
+      <td>${esc(d.college || '-')}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('dept-table-wrap').innerHTML = html;
+}
+
+document.getElementById('dept-search').addEventListener('input', renderDepartments);
+
+// ── 유틸 ──────────────────────────────────────────────────────────
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ── 초기화 ────────────────────────────────────────────────────────
+loadCompanies();
+loadDepartments();
+</script>
+</body>
+</html>
