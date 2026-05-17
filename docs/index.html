@@ -17,7 +17,6 @@
     .hdr-btn{padding:8px 16px;color:#fff;border:none;border-radius:20px;font-size:.83rem;font-weight:700;cursor:pointer;transition:background .15s;white-space:nowrap}
     #join-btn{background:#111}
     #join-btn:hover{background:#333}
-    .filter-bar{padding:10px 28px;display:flex;gap:8px;flex-wrap:wrap;background:#fff;border-bottom:1px solid #ebebeb}
     .fbtn{padding:5px 13px;border-radius:18px;border:1.5px solid #ddd;background:#fff;font-size:.78rem;cursor:pointer;transition:all .15s;color:#555}
     .fbtn.active,.fbtn:hover{background:#111;color:#fff;border-color:#111}
     #grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;padding:20px 28px 48px}
@@ -83,6 +82,23 @@
     .ac-item .ac-name{font-weight:600;color:#111}
     .ac-item .ac-meta{font-size:.72rem;color:#888;margin-top:1px}
     .empty{padding:60px 20px;text-align:center;color:#999;font-size:.9rem}
+
+    body.modal-open{overflow:hidden}
+
+    .filter-bar{padding:10px 28px;display:flex;gap:8px;flex-wrap:wrap;background:#fff;border-bottom:1px solid #ebebeb;align-items:center}
+    .filter-drop{position:relative}
+    .filter-drop .fbtn::after{content:' ▾';font-size:.65rem}
+    .filter-drop-list{position:absolute;top:calc(100% + 4px);left:0;min-width:160px;max-height:240px;overflow-y:auto;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.1);display:none;z-index:200}
+    .filter-drop-list.open{display:block}
+    .filter-drop-item{padding:7px 12px;font-size:.8rem;cursor:pointer;color:#444}
+    .filter-drop-item:hover,.filter-drop-item.active{background:#f3f3f3;color:#111;font-weight:600}
+    .fbtn.toggle{background:#fff;border:1.5px solid #444;color:#444}
+    .fbtn.toggle.active{background:#111;color:#fff;border-color:#111}
+
+    .dyn-row.exp-row{grid-template-columns:1fr 1fr 1fr auto auto}
+    .dyn-cur-chk{display:flex;align-items:center;gap:3px;font-size:.72rem;color:#666;white-space:nowrap}
+    .dyn-cur-chk input{margin:0}
+    .exp-current-badge{display:inline-block;background:#3b4cdc;color:#fff;font-size:.68rem;padding:1px 5px;border-radius:4px;margin-left:4px;font-weight:600}
   </style>
 </head>
 <body>
@@ -90,18 +106,31 @@
   <img src="https://www.google.com/s2/favicons?domain=knu.ac.kr&sz=64" class="knu-logo" alt="경북대">
   <div class="header-title"><h1>KCIS</h1><span class="count" id="cnt"></span></div>
   <input id="search" type="text" placeholder="이름·학과·회사 통합 검색…">
-  <button id="join-btn" class="hdr-btn">회원가입</button>
+  <button id="join-btn" class="hdr-btn">인원 등록</button>
 </header>
 <div class="filter-bar" id="fbar">
-  <button class="fbtn active" data-filter="">전체</button>
+  <button class="fbtn active" data-filter="" id="f-all">전체</button>
+  <button class="fbtn toggle" id="f-current-toggle">현업자</button>
+  <div class="filter-drop" id="fd-dept">
+    <button class="fbtn" id="fb-dept">학과</button>
+    <div class="filter-drop-list" id="fdl-dept"></div>
+  </div>
+  <div class="filter-drop" id="fd-year">
+    <button class="fbtn" id="fb-year">연도</button>
+    <div class="filter-drop-list" id="fdl-year"></div>
+  </div>
+  <div class="filter-drop" id="fd-job">
+    <button class="fbtn" id="fb-job">업종</button>
+    <div class="filter-drop-list" id="fdl-job"></div>
+  </div>
 </div>
 <div id="grid"></div>
 
-<!-- 회원가입/수정 모달 -->
+<!-- 인원 등록/수정 모달 -->
 <div id="modal-overlay" class="overlay">
 <div id="modal" class="modal-box">
   <button class="modal-close" title="닫기">✕</button>
-  <h2 id="modal-title">회원 정보 등록</h2>
+  <h2 id="modal-title">인원 정보 등록</h2>
 
   <div class="li-section" id="li-section">
     <div class="li-section-title">LinkedIn에서 가져오기 (선택)</div>
@@ -148,7 +177,7 @@
   </div>
 
   <div class="dyn-section">
-    <div class="dyn-title">직장 경력</div>
+    <div class="dyn-title">경력</div>
     <div id="exp-rows"></div>
     <button id="add-exp" class="dyn-add" type="button">+ 직장 추가</button>
   </div>
@@ -221,7 +250,7 @@ async function api(path, opts = {}) {
 function av(n) { return (n || '?')[0]; }
 
 function renderCard(m) {
-  const exps = (m.experiences || []).map(e => `<div class="exp-line">· ${escapeHtml([e.company, e.role, e.period].filter(Boolean).join(' / '))}</div>`).join('');
+  const exps = (m.experiences || []).map(e => `<div class="exp-line">· ${escapeHtml([e.company, e.role, e.period].filter(Boolean).join(' / '))}${e.is_current ? '<span class="exp-current-badge">현재</span>' : ''}</div>`).join('');
   const edu  = (m.education   || []).map(e => `<div class="edu-line">· ${escapeHtml([e.school, e.major, e.period].filter(Boolean).join(' / '))}</div>`).join('');
   const acts = (m.etc         || []).map(a => `<div class="act-line">· ${escapeHtml([a.name, a.role, a.period].filter(Boolean).join(' / '))}</div>`).join('');
   const cert = (m.certs       || []).map(c => `<div class="cert-line">· ${escapeHtml([c.name, c.issuer, c.date].filter(Boolean).join(' / '))}</div>`).join('');
@@ -251,7 +280,7 @@ function render(list) {
   const grid = document.getElementById('grid');
   document.getElementById('cnt').textContent = `${list.length}명`;
   if (!list.length) {
-    grid.innerHTML = '<div class="empty">아직 등록된 회원이 없습니다.</div>';
+    grid.innerHTML = '<div class="empty">아직 등록된 인원이 없습니다.</div>';
     return;
   }
   grid.innerHTML = list.map(renderCard).join('');
@@ -261,28 +290,84 @@ function render(list) {
 }
 
 // ── 필터 ───────────────────────────────────────────────────────
+const FILTER_STATE = { is_current: false, dept: '', year: '', job_type: '' };
+
 function buildFilters() {
-  const bar = document.getElementById('fbar');
-  bar.querySelectorAll('.fbtn:not([data-filter=""])').forEach(b => b.remove());
-  const jobs = [...new Set(ALL_MEMBERS.map(m => m.job_type).filter(Boolean))].sort();
-  jobs.forEach(j => {
-    const b = document.createElement('button');
-    b.className = 'fbtn'; b.dataset.filter = j; b.textContent = j;
-    bar.appendChild(b);
-  });
-  bar.querySelectorAll('.fbtn').forEach(b => b.addEventListener('click', () => {
-    bar.querySelectorAll('.fbtn').forEach(x => x.classList.remove('active'));
-    b.classList.add('active');
+  const deptList = document.getElementById('fdl-dept');
+  const yearList = document.getElementById('fdl-year');
+  const jobList = document.getElementById('fdl-job');
+
+  const depts = [...new Set(ALL_MEMBERS.map(m => m.dept).filter(Boolean))].sort();
+  const years = [...new Set(ALL_MEMBERS.map(m => m.year).filter(Boolean))].sort();
+  const jobs = [...new Set(ALL_MEMBERS.flatMap(m => (m.job_type || '').split(/\s*,\s*/).filter(Boolean)))].sort();
+
+  function fillDropdown(listEl, items, key) {
+    listEl.innerHTML = '<div class="filter-drop-item" data-val="">전체</div>' +
+      items.map(v => `<div class="filter-drop-item" data-val="${escapeHtml(v)}">${escapeHtml(v)}</div>`).join('');
+    listEl.querySelectorAll('.filter-drop-item').forEach(el => {
+      el.addEventListener('click', () => {
+        FILTER_STATE[key] = el.dataset.val;
+        listEl.classList.remove('open');
+        const btn = listEl.parentElement.querySelector('.fbtn');
+        btn.textContent = el.dataset.val || (key === 'dept' ? '학과' : key === 'year' ? '연도' : '업종');
+        btn.classList.toggle('active', !!el.dataset.val);
+        applyFilter();
+      });
+    });
+  }
+
+  fillDropdown(deptList, depts, 'dept');
+  fillDropdown(yearList, years, 'year');
+  fillDropdown(jobList, jobs, 'job_type');
+}
+
+function setupFilterEvents() {
+  document.getElementById('f-all').addEventListener('click', () => {
+    FILTER_STATE.is_current = false;
+    FILTER_STATE.dept = '';
+    FILTER_STATE.year = '';
+    FILTER_STATE.job_type = '';
+    document.getElementById('f-current-toggle').classList.remove('active');
+    document.getElementById('fb-dept').textContent = '학과';
+    document.getElementById('fb-dept').classList.remove('active');
+    document.getElementById('fb-year').textContent = '연도';
+    document.getElementById('fb-year').classList.remove('active');
+    document.getElementById('fb-job').textContent = '업종';
+    document.getElementById('fb-job').classList.remove('active');
     applyFilter();
-  }));
+  });
+
+  document.getElementById('f-current-toggle').addEventListener('click', () => {
+    FILTER_STATE.is_current = !FILTER_STATE.is_current;
+    document.getElementById('f-current-toggle').classList.toggle('active', FILTER_STATE.is_current);
+    applyFilter();
+  });
+
+  ['dept','year','job'].forEach(key => {
+    const btn = document.getElementById('fb-' + key);
+    const list = document.getElementById('fdl-' + key);
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.querySelectorAll('.filter-drop-list.open').forEach(l => { if (l !== list) l.classList.remove('open'); });
+      list.classList.toggle('open');
+    });
+  });
+
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.filter-drop-list.open').forEach(l => l.classList.remove('open'));
+  });
 }
 
 function applyFilter() {
   const q = document.getElementById('search').value.trim().toLowerCase();
-  const active = document.querySelector('.fbtn.active');
-  const job = active ? active.dataset.filter : '';
   const filtered = ALL_MEMBERS.filter(m => {
-    if (job && m.job_type !== job) return false;
+    if (FILTER_STATE.is_current && !m.is_current) return false;
+    if (FILTER_STATE.dept && m.dept !== FILTER_STATE.dept) return false;
+    if (FILTER_STATE.year && m.year !== FILTER_STATE.year) return false;
+    if (FILTER_STATE.job_type) {
+      const memberJobs = (m.job_type || '').split(/\s*,\s*/);
+      if (!memberJobs.includes(FILTER_STATE.job_type)) return false;
+    }
     if (!q) return true;
     const hay = [m.name, m.dept, m.current_company, m.job_type,
       ...(m.experiences || []).map(e => e.company + ' ' + e.role)].join(' ').toLowerCase();
@@ -291,6 +376,7 @@ function applyFilter() {
   render(filtered);
 }
 document.getElementById('search').addEventListener('input', applyFilter);
+setupFilterEvents();
 
 // ── 로드 ───────────────────────────────────────────────────────
 async function loadMembers() {
@@ -331,7 +417,8 @@ function resetForm() {
 function openNewModal() {
   editingId = null;
   resetForm();
-  document.getElementById('modal-title').textContent = '회원 정보 등록';
+  document.getElementById('modal-title').textContent = '인원 정보 등록';
+  document.body.classList.add('modal-open');
   overlay.classList.add('open');
 }
 
@@ -340,7 +427,7 @@ function openEditModal(id) {
   if (!m) return;
   editingId = id;
   resetForm();
-  document.getElementById('modal-title').textContent = '회원 정보 수정';
+  document.getElementById('modal-title').textContent = '인원 정보 수정';
   document.getElementById('f-name').value = m.name || '';
   document.getElementById('f-dept').value = m.dept || '';
   document.getElementById('f-year').value = m.year || '';
@@ -356,11 +443,13 @@ function openEditModal(id) {
   fillSection('act-rows', m.etc);
   fillSection('cert-rows', m.certs);
 
+  document.body.classList.add('modal-open');
   overlay.classList.add('open');
 }
 
 function closeModal() {
   overlay.classList.remove('open');
+  document.body.classList.remove('modal-open');
   editingId = null;
 }
 
@@ -380,13 +469,25 @@ function addRow(sectionId, vals) {
   vals = vals || {};
   const fields = ROW_CONFIG[sectionId];
   const row = document.createElement('div');
-  row.className = 'dyn-row';
+  row.className = 'dyn-row' + (sectionId === 'exp-rows' ? ' exp-row' : '');
   fields.forEach(f => {
     const inp = document.createElement('input');
     inp.type = 'text'; inp.name = f.n; inp.placeholder = f.p;
     inp.value = vals[f.n] || '';
     row.appendChild(inp);
   });
+
+  if (sectionId === 'exp-rows') {
+    const chkWrap = document.createElement('label');
+    chkWrap.className = 'dyn-cur-chk';
+    const chk = document.createElement('input');
+    chk.type = 'checkbox'; chk.name = 'is_current';
+    chk.checked = !!vals.is_current;
+    chkWrap.appendChild(chk);
+    chkWrap.appendChild(document.createTextNode('현재'));
+    row.appendChild(chkWrap);
+  }
+
   const del = document.createElement('button');
   del.type = 'button'; del.className = 'dyn-del'; del.textContent = '✕';
   del.addEventListener('click', () => row.remove());
@@ -394,12 +495,10 @@ function addRow(sectionId, vals) {
 
   document.getElementById(sectionId).appendChild(row);
 
-  // 회사명 → autocomplete
   if (sectionId === 'exp-rows') {
     const compInput = row.querySelector('input[name="company"]');
     if (compInput) attachCompanyAutocomplete(compInput);
   }
-  // 학교 → 학과 autocomplete은 별개; 학교는 free text
 }
 
 function fillSection(sectionId, items) {
@@ -640,9 +739,13 @@ function collectRows(sectionId) {
         const inp = row.querySelector(`input[name="${f}"]`);
         obj[f] = inp ? inp.value.trim() : '';
       });
+      if (sectionId === 'exp-rows') {
+        const chk = row.querySelector('input[name="is_current"]');
+        obj.is_current = chk ? chk.checked : false;
+      }
       return obj;
     })
-    .filter(obj => Object.values(obj).some(v => v));
+    .filter(obj => fields.some(f => obj[f]));
 }
 
 document.getElementById('modal-submit').addEventListener('click', async () => {
